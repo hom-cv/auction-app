@@ -1,5 +1,6 @@
 "use client";
 
+import { login, signUp } from "@/app/(auth)/actions";
 import { loginFormSchema, signUpFormSchema } from "@/app/(auth)/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,11 +22,14 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const loginForm = useForm({
     resolver: zodResolver(loginFormSchema),
@@ -46,17 +50,31 @@ export default function AuthPage() {
   });
 
   async function onLoginSubmit(values: any) {
-    setIsLoading(true);
-    // Handle login logic here
-    console.log(values);
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
+      await login(values);
+      toast.success("You have been logged in successfully.");
+      router.push("/app"); // Redirect to home page after successful login
+      router.refresh(); // Refresh the page to update auth state
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to login");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function onSignUpSubmit(values: any) {
-    setIsLoading(true);
-    // Handle sign up logic here
-    console.log(values);
-    setIsLoading(false);
+    try {
+      setIsLoading(true);
+      await signUp(values);
+      toast.success("Your account has been created.");
+      router.push("/"); // Redirect to home page after successful registration
+      router.refresh(); // Refresh the page to update auth state
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to login");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -117,7 +135,7 @@ export default function AuthPage() {
                       disabled={isLoading}
                     >
                       <LogIn className="mr-2 h-4 w-4" />
-                      Login
+                      {isLoading ? "Logging in..." : "Login"}
                     </Button>
                   </form>
                 </Form>
@@ -200,7 +218,7 @@ export default function AuthPage() {
                       disabled={isLoading}
                     >
                       <UserPlus className="mr-2 h-4 w-4" />
-                      Create Account
+                      {isLoading ? "Creating account..." : "Create Account"}
                     </Button>
                   </form>
                 </Form>
